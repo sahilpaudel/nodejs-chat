@@ -1,0 +1,98 @@
+<html>
+<head>
+      <title>Chat with socket.io & node.js</title>
+</head>
+<style>
+#chat{
+     height: 300px;
+}
+#contentWrap{
+     display: none;
+}
+#chatWrap{
+     float: left;
+	 border: 1px #000 solid;
+}
+</style>
+<body>
+
+    <div id="nickWrap">
+	  <p>Enter a username:</p>
+	  <!--if nickname exist-->
+	  <p id="nickError"></p>
+	  <form id="setNick">
+	    <input size="35" id="nickname"></input>
+		<input type="submit"></input>
+	  </form>
+	</div>
+	 
+	 <div id="contentWrap">
+		<div id="chatWrap"><!-- to float chat with username -->
+			<div id="chat"></div>
+				<form id="send-message">
+					<input size="35" id="message"></input>
+					<input type="submit"></input>
+				</form>
+		</div>
+		  <div id="users"></div>
+	 </div>
+	 
+	 <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	 <script src="/socket.io/socket.io.js"></script>
+	 
+	 <script>
+	    jQuery(function ($){
+		
+		   //socket connection
+		   var socket = io.connect();
+		   //pointing to the message form
+		   var $messageForm = $('#send-message');
+		   //pointing to the message text field
+		   var $messageBox = $('#message');
+		   //pointing where the message to be display
+		   var $chat = $('#chat');
+		   //nicknameForm
+		   var $nickForm = $('#setNick');
+		   var $nickError = $('#nickError');
+		   var $nickBox= $('#nickname');
+		   var $users = $('#users');
+		   
+		   $nickForm.submit(function(e){
+		       e.preventDefault(); 
+			   //sending the value of nickBox
+			   socket.emit('new-user', $nickBox.val(), function(data){
+			        //if the nickname is valid do this and that
+					if(data){// it is set in app.js
+					   $('#nickWrap').hide();
+					   $('#contentWrap').show();
+					} else{
+					   $nickError.html('that name is already taken!!');
+					}
+			   });
+			   $nickBox.val('');
+		   });
+		   //display the list of users
+           socket.on('usernames', function (data){
+		        var html = '';
+				for(i=0; i< data.length; i++){
+				   html += data[i] + '<br />'
+				}
+				$users.html(html);
+		   });	   
+		   
+		   
+		   $messageForm.submit(function(e){
+		       e.preventDefault();
+			   //this send-message should be same to that of app.js
+			   socket.emit('send-message',$messageBox.val());
+			   $messageBox.val('');
+		   });
+		   
+		   //receive the message on the client side
+		   socket.on('new-message', function(data){
+		     $chat.append('<b>' + data.nick + ': </b>' +data.msg + "<br />");
+		   })
+		});
+	 </script>
+</body>
+</html>
